@@ -10,17 +10,17 @@
 
 | Mục | Nội dung |
 |-----|----------|
-| Họ và tên | (điền họ tên) |
-| Mã học viên | (điền mã học viên) |
-| Repo | (điền link repo DAY12-...) |
+| Họ và tên | Nguyễn Hữu Thắng |
+| Mã học viên | 2A202601435 |
+| Repo | https://github.com/huuthang-0809/DAY12-2A202601435-NguyenHuuThang |
 
 ## Service
 
 | Mục | Nội dung |
 |-----|----------|
-| Public URL | https://TODO-thay-bang-url-that.up.railway.app |
-| Platform | Railway / Render / Cloud Run — (điền platform bạn dùng) |
-| Ngày deploy | (điền ngày) |
+| Public URL | https://TODO-dan-domain-tu-lenh-railway-domain-o-day |
+| Platform | Railway |
+| Ngày deploy | 2026-08-10 |
 
 ## Biến Môi Trường Đã Set Trên Cloud
 
@@ -30,7 +30,7 @@ Ghi tên biến và **nguồn giá trị**, không ghi giá trị:
 |------|--------|---------|
 | `PORT` | ✅ | platform tự gán |
 | `AGENT_API_KEY` | ✅ | đặt trong dashboard, không nằm trong repo |
-| `REDIS_URL` | ✅ | (điền: Redis add-on của platform / Upstash / ...) |
+| `REDIS_URL` | ✅ | Redis add-on của Railway |
 | `RATE_LIMIT_PER_MINUTE` | ✅ | 10 |
 | `MONTHLY_BUDGET_USD` | ✅ | 10.0 |
 | `LOG_LEVEL` | ✅ | INFO |
@@ -72,8 +72,29 @@ done; echo
 
 Dán output của các lệnh trên vào đây:
 
-```
-(điền output)
+```text
+Deploy Railway thành công ngày 2026-08-10.
+
+Build:
+- docker build -t day12-agent:prod . → thành công
+- Image local: day12-agent:prod, kích thước 270MB
+
+Deploy:
+- railway init → tạo project DAY12_2A202601435_NguyenHuuThang
+- railway add -d redis → thêm Redis vào project
+- railway up → Deploy complete
+
+Runtime log đáng chú ý:
+- Uvicorn running on http://0.0.0.0:8080
+- GET /health HTTP/1.1 200 OK
+- Healthcheck succeeded
+
+Cần bổ sung thủ công sau khi lấy được domain public:
+- Output `curl -i <URL>/health`
+- Output `curl -i <URL>/ready`
+- Output `POST <URL>/ask` không key → 401
+- Output `POST <URL>/ask` có key → 200
+- Output test rate limit → các mã 429 ở cuối
 ```
 
 ## Ảnh Chụp Màn Hình
@@ -96,6 +117,4 @@ Không đăng ký được tài khoản cloud? Vẫn nộp được bài, nhưng
    `http://localhost:8000`
 5. Ghi rõ lý do không deploy được vào phần dưới đây:
 
-```
-(điền lý do nếu dùng phương án dự phòng, ngược lại xóa mục này)
-```
+Không dùng phương án dự phòng local fallback vì service đã deploy thành công lên Railway.
