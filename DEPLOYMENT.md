@@ -18,7 +18,7 @@
 
 | Mục | Nội dung |
 |-----|----------|
-| Public URL | https://TODO-dan-domain-tu-lenh-railway-domain-o-day |
+| Public URL | https://day12-agent-production-6d10.up.railway.app |
 | Platform | Railway |
 | Ngày deploy | 2026-08-10 |
 
@@ -70,33 +70,99 @@ done; echo
 
 ## Kết Quả Chạy Thật
 
-Dán output của các lệnh trên vào đây:
+# 1. Liveness — mong đợi 200 {"status":"ok"}
+(.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang> curl.exe -i "$URL/health"       
+HTTP/1.1 200 OK                           
+Content-Type: application/json            
+Date: Mon, 10 Aug 2026 07:05:39 GMT
+Server: railway-hikari                                 
+x-railway-request-id: oymQCsUOQ2iHA5M-9o6EoQ
+Content-Length: 57
+x-hikari-trace: sin1.tr00                    
+x-railway-edge: sin1
+Connection: keep-alive
 
-```text
-Deploy Railway thành công ngày 2026-08-10.
+{"status":"ok","service":"day12-agent","version":"1.0.0"}
 
-Build:
-- docker build -t day12-agent:prod . → thành công
-- Image local: day12-agent:prod, kích thước 270MB
+# 2. Readiness — mong đợi 200 {"status":"ready"} (đã nối được Redis)
+(.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang> curl.exe -i "$URL/ready"        
+HTTP/1.1 200 OK                           
+Content-Type: application/json            
+Date: Mon, 10 Aug 2026 07:09:45 GMT
+Server: railway-hikari                                 
+x-railway-request-id: xJzYbUQzTjusXeoTwUFZXw
+Content-Length: 31                                       
+x-hikari-trace: sin1.98a6                    
+x-railway-edge: sin1            
+Connection: keep-alive          
+              
+{"status":"ready","redis":true}  
 
-Deploy:
-- railway init → tạo project DAY12_2A202601435_NguyenHuuThang
-- railway add -d redis → thêm Redis vào project
-- railway up → Deploy complete
+# 3. Không có API key — mong đợi 401
+(.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang> $body = @{ question = "Hello" } | ConvertTo-Json -Compress
+(.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang> $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+(.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang> 
+(.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang> try {
+>>   Invoke-RestMethod `
+>>     -Method POST `
+>>     -Uri "$URL/ask" `
+>>     -ContentType "application/json; charset=utf-8" `
+>>     -Body $bodyBytes
+>> } catch {
+>>   $_.Exception.Response.StatusCode.value__
+>> }
+401
 
-Runtime log đáng chú ý:
-- Uvicorn running on http://0.0.0.0:8080
-- GET /health HTTP/1.1 200 OK
-- Healthcheck succeeded
+# 4. Có API key — mong đợi 200 kèm câu trả lời
+(.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang> $headers = @{
+>>   "X-API-Key" = $env:AGENT_API_KEY
+>>   "X-User-Id" = "sv-test"
+>> }
+(.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang> 
+(.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang> $body = @{ question = "Deploy la gi?" } | ConvertTo-Json -Compress
+(.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang> $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+(.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang> 
+(.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang> Invoke-RestMethod `
+>>   -Method POST `
+>>   -Uri "$URL/ask" `
+>>   -Headers $headers `
+>>   -ContentType "application/json; charset=utf-8" `
+>>   -Body $bodyBytes
 
-Cần bổ sung thủ công sau khi lấy được domain public:
-- Output `curl -i <URL>/health`
-- Output `curl -i <URL>/ready`
-- Output `POST <URL>/ask` không key → 401
-- Output `POST <URL>/ask` có key → 200
-- Output test rate limit → các mã 429 ở cuối
-```
 
+answer         : Ngáº¯n gá»n: Deploy la gi phá»¥ thuá»c vÃo ba yáº¿u tá» â cáº¥u hÃ¬nh qua biáº¿n 
+                 mÃ´i trÆ°á»á» orchestrator biáº¿t tráº¡ng thÃ¡i, vÃ giá» háº¡n tÃ
+                 i nguyÃªn. (MÃ¬nh Äang nhá»Æ°á»£t trao Äá»i trÆ°á» ÄÃ³.)
+user_id        : sv-test
+history_length : 20
+cost_usd       : 9.555E-05
+tokens         : @{in=449; out=47}
+
+# 5. Rate limit — gọi 15 lần, những lần cuối phải trả 429
+.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang> $headers = @{
+>>   "X-API-Key" = $env:AGENT_API_KEY                                                                      
+>>   "X-User-Id" = "sv-test"                                                                               
+>> }                                                                                                       
+(.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang>                                          
+(.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang> $body = @{ question = "test" } | ConvertTo-Json -Compress
+(.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang> $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+(.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang> 
+(.venv) (base) PS D:\AI_Vin\LAB\DAY12-2A202601435-NguyenHuuThang> 1..15 | ForEach-Object {
+>>   try {
+>>     Invoke-WebRequest `
+>>       -Method POST `
+>>       -Uri "$URL/ask" `
+>>       -Headers $headers `
+>>       -ContentType "application/json; charset=utf-8" `
+>>       -Body $bodyBytes | Out-Null
+>>     Write-Host 200 -NoNewline
+>>     Write-Host " " -NoNewline
+>>   } catch {
+>>     Write-Host $_.Exception.Response.StatusCode.value__ -NoNewline
+>>     Write-Host " " -NoNewline
+>>   }
+>> }
+200 200 200 200 200 200 200 200 200 200 429 429 429 429 429 
 ## Ảnh Chụp Màn Hình
 
 Đặt ảnh trong thư mục `screenshots/`:
@@ -106,15 +172,3 @@ Cần bổ sung thủ công sau khi lấy được domain public:
 
 ---
 
-## Nếu Dùng Phương Án Dự Phòng
-
-Không đăng ký được tài khoản cloud? Vẫn nộp được bài, nhưng CP5 tối đa 60% điểm:
-
-1. Đặt `LOCAL_FALLBACK=true` trong `.env`
-2. Chạy `docker compose up -d` rồi kiểm tra `docker compose ps`
-3. Chụp màn hình vào `screenshots/`
-4. Chạy `pytest tests/test_cp5.py -v` — bộ test sẽ tự chuyển sang kiểm tra
-   `http://localhost:8000`
-5. Ghi rõ lý do không deploy được vào phần dưới đây:
-
-Không dùng phương án dự phòng local fallback vì service đã deploy thành công lên Railway.
